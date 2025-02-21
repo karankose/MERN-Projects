@@ -1,41 +1,79 @@
-import { validationResult } from 'express-validator';
-import { createUser } from '../services/user.service.js';
-import userModel from '../models/user.model.js';
+import { validationResult } from "express-validator";
+import { createUser } from "../services/user.service.js";
+import userModel, {
+  comparePassword,
+  hashingPassword,
+} from "../models/user.model.js";
+import BlacklistToken from "../models/blacklistToken.js";
 
 export const registerUser = async (req, res, next) => {
-    // Check for validation errors from express-validator
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
+  const errors = validationResult(req); //express-validator
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
 
-    // Destructure the fields from req.body
-    const { fullname, email, password } = req.body;
-    console.log(req.body);
+  const { fullname, email, password } = req.body;
+  console.log(req.body);
 
-    // Check if fullname contains both firstname and lastname
-    if (!fullname || !fullname.firstname || !fullname.lastname) {
-        return res.status(400).json({ error: "First name and last name are required." });
-    }
+  if (!fullname || !fullname.firstname || !fullname.lastname) {
+    return res
+      .status(400)
+      .json({ error: "First name and last name are required." });
+  }
 
-    // Hash the password
-    const hashPassword = await userModel.hashPassword(password);
+  const hashPassword = await hashingPassword(password);
 
-    // Call the createUser service to create the user
-    try {
-        const user = await createUser({
-            firstname: fullname.firstname,
-            lastname: fullname.lastname,
-            email,
-            password: hashPassword
-        });
+  try {
+    const user = await createUser({
+      firstname: fullname.firstname,
+      lastname: fullname.lastname,
+      email,
+      password: hashPassword,
+    });
 
-        // Generate authentication token
-        const token = user.generateAuthToken();
+    const token = user.generateAuthToken();
 
-        // Return the token and user details
-        res.status(200).json({ token, user });
-    } catch (error) {
-        next(error);  // Pass any errors to the global error handler
-    }
+    res.status(200).json({ token, user });
+  } catch (error) {
+    next(error); // Pass any errors to the global error handler
+  }
+};
+
+export const loginUser = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { email, password } = req.body;
+
+  const user = await userModel.findOne({ email }).select("+password");
+  console.log(user);
+
+  if (!user) {
+    return res.status(401).json({ message: "Invalid email or password" });
+  }
+  const isMatch = await comparePassword(password, user.password);
+
+  if (!isMatch) {
+    return res.status(401).json({ message: "Invalid  password" });
+  }
+
+  const token = user.generateAuthToken();
+
+  res.cookie("token", token);
+
+  res.status(200).json({ token, user });
+  next();
+};
+
+export const getUserProfile = async (req, res, next) => {
+  res.status(200).json(req.user);
+};
+
+export const logoutUser = async (req, res, next) => {
+  //   res.clearCookies('token');
+  const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+  await BlacklistToken.create({ token });
+  res.status(200).json({ message: "logout " });
 };
