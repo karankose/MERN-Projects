@@ -8,16 +8,18 @@ import { validationResult } from "express-validator";
 export const registerCaptain = async (req, res, next) => {
   const error = validationResult(req);
   if (!error.isEmpty()) {
+    console.log(error);
+    
     return res.status(401).json({ error: error.array() });
   }
-  const { fullname, email, password, vehicle } = req.body;
+  const { fullName, email, password, vehicle } = req.body;
 
   const hashPassword = await hashingPassword(password);
 
   try {
     const captain = await createCaptain({
-      firstname: fullname.firstname,
-      lastname: fullname.lastname,
+      firstname: fullName.firstName,
+      lastname: fullName.lastName,
       email,
       password: hashPassword,
       color: vehicle.color,
@@ -71,7 +73,7 @@ export const getCaptainProfile = async (req, res, next) => {
 };
 
 export const logoutCaptain = async (req, res, next) => {
-  //   res.clearCookies('token');
+    res.clearCookies('token');
   const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
   await BlacklistToken.create({ token });
   res.status(200).json({ message: "logout " });

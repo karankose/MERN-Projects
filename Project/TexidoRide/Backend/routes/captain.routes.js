@@ -16,7 +16,7 @@ router.post('/register', [
     body('vehicle.vehicleType').isIn(['car', 'motorcycle', 'auto']).withMessage('Invalid vehicle type')
 ], registerCaptain);
 
-router.get('/login',
+router.post('/login',
     [body("email", "Invalid Email").isEmail(),
   body("email", "email is require").notEmpty(),
   body("password", "Invalid password")

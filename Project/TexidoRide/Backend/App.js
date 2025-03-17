@@ -5,6 +5,8 @@ import express from 'express';
 import connectToDb from './db/db.js';
 import UserRoutes from './routes/user.routes.js';
 import captainRoutes from './routes/captain.routes.js';
+import mapsRoutes from './routes/maps.routes.js'
+import rideRoutes from './routes/ride.routes.js'
 import cookieParser from 'cookie-parser';
 
 connectToDb();
@@ -22,6 +24,8 @@ App.get('/',(req , res)=>{
 });
 App.use('/user',UserRoutes);
 App.use('/captain',captainRoutes);
+App.use('/maps',mapsRoutes)
+App.use('/ride',rideRoutes)
 
 
 export default App;

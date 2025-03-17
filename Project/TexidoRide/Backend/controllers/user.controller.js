@@ -32,7 +32,7 @@ export const registerUser = async (req, res, next) => {
     });
 
     const token = user.generateAuthToken();
-
+    console.log("success")
     res.status(200).json({ token, user });
   } catch (error) {
     next(error); // Pass any errors to the global error handler
@@ -72,7 +72,7 @@ export const getUserProfile = async (req, res, next) => {
 };
 
 export const logoutUser = async (req, res, next) => {
-  //   res.clearCookies('token');
+    res.clearCookies('token');
   const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
   await BlacklistToken.create({ token });
   res.status(200).json({ message: "logout " });
